@@ -1,0 +1,24 @@
+{
+  "name": "messingaround",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^17.0.36",
+    "@types/steam-totp": "^2.1.0",
+    "@types/yargs": "^17.0.10",
+    "eslint": "^8.16.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
+  },
+  "dependencies": {
+    "otplib": "^12.0.1",
+    "steam-totp": "^2.1.2",
+    "yargs": "^17.5.1"
+  }
+}
