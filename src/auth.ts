@@ -30,7 +30,7 @@ export function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
 
 export function addAuth({ objAuth, svc, sk, replace }: AuthOptions) {
   if (objAuth[`${svc}`] && !replace) 
-    return console.log(`${svc} already exists, adds --replace to overwrite it.`)
+    return console.info(`${svc} already exists, adds --replace to overwrite it.`)
   objAuth[`${svc}`] = String(sk)
   encrypt({ str: JSON.stringify(objAuth) });
   return console.info(`${svc} added!`);
