@@ -4,42 +4,46 @@ import { generateAuthCode } from 'steam-totp';
 import { encrypt } from "./pshell";
 
 type AuthOptions = {
-  svcs: any;
+  objAuth: Record<string,string>;
   svc?: string;
   clipboard?: boolean;
   steam?: boolean;
-  sk?: number;
+  showsecret? : boolean;
+  sk?: string;
+  replace?: boolean;
 };
 
-function getToken({ key }: { key: string; }): string {
-  return authenticator.generate(key);
+function getToken({ key, steam }: { key: string; steam?: boolean }): string {
+  return steam ? generateAuthCode(key) : authenticator.generate(key);
 }
 
-function getSteamToken({ key }: { key: string; }): string {
-  return generateAuthCode(key);
+export function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
+  const skey = objAuth[`${svc}`];
+  if (skey) {
+    const token = getToken({ key: skey, steam:steam })
+    if (clipboard)
+      spawn('clip').stdin.end(token);
+    return console.info(token);
+  }
+  return console.info(`${svc} not found.`);
 }
 
-export function getAuth({ svcs, svc, clipboard, steam }: AuthOptions) {
-  if (!svcs[svc!])
-    return console.info(`${svc} not found.`);
-  const token = steam ? getSteamToken({ key: svcs[svc!] }) : getToken({ key: svcs[svc!] });
-  if (clipboard)
-    spawn('clip').stdin.end(token);
-  return console.info(token);
-}
-
-export function addAuth({ svcs, svc, sk }: AuthOptions) {
-  svcs[svc!] = sk;
-  encrypt({ str: JSON.stringify(svcs) });
+export function addAuth({ objAuth, svc, sk, replace }: AuthOptions) {
+  if (objAuth[`${svc}`] && !replace) 
+    return console.log(`${svc} already exists, adds --replace to overwrite it.`)
+  objAuth[`${svc}`] = String(sk)
+  encrypt({ str: JSON.stringify(objAuth) });
   return console.info(`${svc} added!`);
 }
 
-export function removeAuth({ svcs, svc }: AuthOptions) {
-  delete svcs[svc!];
-  encrypt({ str: JSON.stringify(svcs) });
+export function removeAuth({ objAuth, svc }: AuthOptions) {
+  if (!objAuth[`${svc}`]) return console.info(`${svc} not found.`)
+  delete objAuth[`${svc}`];
+  encrypt({ str: JSON.stringify(objAuth) });
   return console.info(`${svc} removed!`);
 }
 
-export function listAuth({ svcs }: AuthOptions) {
-  return console.table(Object.keys(svcs));
+export function listAuth({ objAuth, showsecret }: AuthOptions) {
+  if (showsecret) return console.table(objAuth);
+  return console.table(Object.keys(objAuth));
 }
