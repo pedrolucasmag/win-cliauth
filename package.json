@@ -1,14 +1,15 @@
 {
-  "name": "messingaround",
+  "name": "win-cli-otpmanager",
   "version": "1.0.0",
-  "description": "",
+  "description": "OTP CLI Manager for Windows.",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "start" : "node ./dist/main.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Pedro Lucas Magalhães <pedrolucasmag@gmail.com>",
+  "license": "BSD-3-Clause",
   "devDependencies": {
     "@types/node": "^17.0.36",
     "@types/steam-totp": "^2.1.0",
