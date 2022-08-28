@@ -13,7 +13,7 @@ export function handleCommands(objAuth : Record<string,string>) {
   return yargs(hideBin(process.argv))
     .command(
       'add <name> <secret-key>',
-      'add authenticator with given secret key.',
+      'adds authenticator with given secret key.',
       (y) => y.options({
         'replace' : {
           description: "forces replacement of existing service.",
@@ -24,20 +24,20 @@ export function handleCommands(objAuth : Record<string,string>) {
     )
     .command(
       'remove <name>',
-      'remove given <name> authenticator.',
+      'removes the given <name> authenticator.',
       { },
       (argv: Arguments) => removeAuth({ objAuth, svc: argv.name })
     )
     .command(
       'get <name>',
-      'get token from given service <name> (for steam guard, add --steam)',
+      'gets the token from service <name> (for steam guard, add --steam)',
       (y) => y.options({
         'steam': {
-          description: "get token from steam authenticator.",
+          description: "gets token from steam authenticator.",
           required: false
         },
         'clipboard': {
-          description: 'add authenticator code to clipboard',
+          description: 'adds authenticator code to clipboard',
           required: false
         }
       }),
@@ -48,10 +48,10 @@ export function handleCommands(objAuth : Record<string,string>) {
     )
     .command(
       'list',
-      'Prints out authenticator list.',
+      'Prints out the list of authenticators.',
       (y) => y.options({
         'showsecret' : {
-          description: "Prints out list with secret key",
+          description: "Prints out the list with secret keys",
           require:false
         },
       }),

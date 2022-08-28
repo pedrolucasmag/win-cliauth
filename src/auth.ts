@@ -44,6 +44,5 @@ export function removeAuth({ objAuth, svc }: AuthOptions) {
 }
 
 export function listAuth({ objAuth, showsecret }: AuthOptions) {
-  if (showsecret) return console.table(objAuth);
-  return console.table(Object.keys(objAuth));
+  return showsecret ? console.table(objAuth) : console.table(Object.keys(objAuth));
 }
