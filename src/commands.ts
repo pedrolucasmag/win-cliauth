@@ -19,6 +19,7 @@ interface Arguments {
 
 export function handleCommands(objAuth : Record<string,string>) {
   return yargs(hideBin(process.argv))
+    .scriptName("win-cliauth")
     .command(
       'add <name> <secret-key>',
       'adds authenticator with given secret key.',
