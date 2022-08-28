@@ -5,7 +5,8 @@
   "author": "Pedro Lucas Magalhães <pedrolucasmag@gmail.com>",
   "license": "BSD-3-Clause",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepack": "tsc"
   },
   "bin" : { "win-cliauth" : "./dist/main.js" },
   "files" : [
