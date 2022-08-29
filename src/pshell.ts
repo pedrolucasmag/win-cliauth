@@ -15,10 +15,11 @@ function pshell({ cmd }: { cmd: string; }) {
 export function encrypt({ str }: { str: string; }) {
   return pshell({
     cmd: `
-    if (!(Test-Path "keys")) { New-Item keys -type "file" } 
+    $keyPath = "$($env:AppData)/win-cliauth/keys"
+    if (!(Test-Path "$keyPath")) { New-Item -Path $keyPath -Force } 
     $secureString = ConvertTo-SecureString '${str}' -AsPlainText -Force
     $encrypted = ConvertFrom-SecureString -SecureString $secureString
-    $encrypted > keys
+    $encrypted > $keyPath
   `
   });
 }
@@ -26,9 +27,10 @@ export function encrypt({ str }: { str: string; }) {
 export function decrypt() {
   return pshell({
     cmd: `
-    if (!(Test-Path "keys")) { '{}' } 
+    $keyPath = "$($env:AppData)/win-cliauth/keys"
+    if (!(Test-Path "$keyPath")) { '{}' } 
     else {
-      $secureString = Get-Content keys | ConvertTo-SecureString
+      $secureString = Get-Content $keyPath | ConvertTo-SecureString
       $decrypted = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString))
       $decrypted
       }`
