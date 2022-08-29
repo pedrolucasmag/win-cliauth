@@ -29,7 +29,7 @@ export function handleCommands(objAuth : Record<string,string>) {
           require:false
         },
       }),
-      (argv: Arguments) => addAuth({ objAuth, svc: argv.name, sk: argv.sk, replace: argv.replace })
+      (argv: Arguments) => addAuth({ objAuth, svc: argv.name, sk: argv.secretKey, replace: argv.replace }) 
     )
     .command(
       'remove <name>',
