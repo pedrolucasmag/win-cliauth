@@ -8,8 +8,10 @@
     "build": "tsc",
     "prepack": "tsc"
   },
-  "bin" : { "win-cliauth" : "./dist/main.js" },
-  "files" : [
+  "bin": {
+    "win-cliauth": "./dist/main.js"
+  },
+  "files": [
     "dist/*",
     "LICENSE",
     "!dist/keys"
