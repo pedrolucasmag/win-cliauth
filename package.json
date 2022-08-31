@@ -11,6 +11,7 @@
   "bin": {
     "win-cliauth": "./dist/main.js"
   },
+  "repository": "github:pedrolucasmag/win-cliauth",
   "files": [
     "dist/*",
     "LICENSE",
