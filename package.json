@@ -13,12 +13,12 @@
   },
   "repository": "github:pedrolucasmag/win-cliauth",
   "files": [
-    "dist/*",
+    "dist",
     "LICENSE",
     "!dist/keys"
   ],
   "devDependencies": {
-    "@types/node": "^17.0.36",
+    "@types/node": "^18.12.1",
     "@types/steam-totp": "^2.1.0",
     "@types/yargs": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
