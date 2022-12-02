@@ -18,7 +18,7 @@
     "!dist/keys"
   ],
   "devDependencies": {
-    "@types/node": "^18.12.1",
+    "@types/node": "^18.11.10",
     "@types/steam-totp": "^2.1.0",
     "@types/yargs": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
