@@ -33,6 +33,17 @@ win-cliauth --help
 - The secret keys are stored in an encrypted file in the user's data directory, protected by the user's operating system.
 - Please note that the encrypted file can only be read on the same Windows user account where it was created. It may not be readable on other user accounts or operating systems.
 
+## Credits
+
+This project uses the following open-source libraries:
+
+- [otplib](https://github.com/yeojz/otplib) - A JavaScript One-Time Password (OTP) library.
+- [steam-totp](https://github.com/DoctorMcKay/node-steam-totp) - A Node.js library for generating Steam-compatible 2FA tokens.
+- [yargs](https://github.com/yargs/yargs) - A command-line argument parsing library for Node.js.
+
+Please refer to the respective library documentation for detailed information on their usage, licensing, and contributions.
+
+
 ## Contributing
 
 Contributions are welcome! If you find any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on [GitHub](https://github.com/pedrolucasmag/win-cliauth).
