@@ -12,7 +12,18 @@ LICENSE file in the root directory of this source tree.
 import { handleCommands } from './src/commands';
 import { decrypt } from './src/pshell';
 
-  decrypt().stdout?.on('data', (data) => {
-    const svcs = JSON.parse(data);
+const childProcess = decrypt();
+let rawData = '';
+
+childProcess.stdout?.on('data', (chunk) => {
+  rawData += chunk;
+});
+
+childProcess.stdout?.on('end', () => {
+  try {
+    const svcs = JSON.parse(rawData);
     handleCommands(svcs);
-  }) ?? false;
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
+  }
+});
