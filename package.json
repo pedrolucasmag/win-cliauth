@@ -1,11 +1,12 @@
 {
   "name": "win-cliauth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "win-cliauth is a CLI-based OTP (One-Time Password) authenticator management tool for Windows.",
   "author": "Pedro Lucas Magalhães <pedrolucasmag@gmail.com>",
   "license": "BSD-3-Clause",
   "scripts": {
     "build": "tsc",
+    "release": "standard-version",
     "prepack": "tsc"
   },
   "bin": {
@@ -23,7 +24,8 @@
     "@types/yargs": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
-    "eslint": "^8.22.0"
+    "eslint": "^8.22.0",
+    "standard-version": "^9.5.0"
   },
   "os": [
     "win32"
