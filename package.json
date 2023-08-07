@@ -30,6 +30,15 @@
   "os": [
     "win32"
   ],
+  "keywords": [
+    "otp",
+    "authenticator",
+    "cli",
+    "windows",
+    "steamguard",
+    "2fa",
+    "totp"
+  ],
   "dependencies": {
     "otplib": "^12.0.1",
     "steam-totp": "^2.1.2",
