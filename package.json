@@ -40,7 +40,7 @@
     "totp"
   ],
   "dependencies": {
-    "otplib": "^12.0.1",
+    "otpauth": "^9.1.4",
     "steam-totp": "^2.1.2",
     "yargs": "^17.5.1"
   }

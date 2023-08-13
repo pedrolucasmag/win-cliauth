@@ -7,7 +7,7 @@ LICENSE file in the root directory of this source tree.
  */
 
 import { spawn } from 'child_process';
-import { authenticator } from 'otplib';
+import { TOTP } from 'otpauth';
 import { generateAuthCode } from 'steam-totp';
 import { encrypt } from "./pshell";
 
@@ -21,8 +21,13 @@ type AuthOptions = {
   replace?: boolean;
 };
 
+function getTOTP(key: string): string {
+  const auth = new TOTP({ secret: key, digits: 6, period: 30 });
+  return auth.generate();
+}
+
 function getToken({ key, steam }: { key: string; steam?: boolean }): string {
-  return steam ? generateAuthCode(key) : authenticator.generate(key);
+  return steam ? generateAuthCode(key) : getTOTP(key);
 }
 
 export function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
