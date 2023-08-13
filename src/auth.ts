@@ -21,19 +21,35 @@ type AuthOptions = {
   replace?: boolean;
 };
 
-function getTOTP(key: string): string {
+async function synchronizeTime(): Promise<number> {
+  try {
+    const response = await fetch('http://www.google.com');
+    const responseHeaders = response.headers;
+    const headerDate = responseHeaders.get('date');
+    const serverTime = headerDate ? Date.parse(headerDate) : Date.now();
+    const localTime = Date.now();
+    const timeDifference = serverTime - localTime;
+    return Date.now() + timeDifference;
+  } catch (error) {
+    console.error('Time synchronization error:', error);
+    throw error;
+  }
+}
+
+async function getTOTP(key: string): Promise<string> {
   const auth = new TOTP({ secret: key, digits: 6, period: 30 });
-  return auth.generate();
+  const timestamp = await synchronizeTime();
+  return auth.generate({ timestamp });
 }
 
-function getToken({ key, steam }: { key: string; steam?: boolean }): string {
-  return steam ? generateAuthCode(key) : getTOTP(key);
+function getToken({ key, steam }: { key: string; steam?: boolean }): Promise<string> | string {
+  return steam ? generateAuthCode(key) : getTOTP(key).then((code) => code);
 }
 
-export function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
+export async function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
   const skey = objAuth[`${svc}`];
   if (skey) {
-    const token = getToken({ key: skey, steam:steam })
+    const token = await getToken({ key: skey, steam:steam })
     if (clipboard)
       spawn('clip').stdin.end(token);
     return console.info(token);
