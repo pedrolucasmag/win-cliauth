@@ -10,9 +10,12 @@
     "prepack": "tsc"
   },
   "bin": {
-    "win-cliauth": "./dist/main.js"
+    "win-cliauth": "dist/main.js"
   },
-  "repository": "github:pedrolucasmag/win-cliauth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pedrolucasmag/win-cliauth.git"
+  },
   "files": [
     "dist",
     "LICENSE",
