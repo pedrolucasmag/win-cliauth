@@ -37,7 +37,7 @@ win-cliauth --help
 
 This project uses the following open-source libraries:
 
-- [otplib](https://github.com/yeojz/otplib) - A JavaScript One-Time Password (OTP) library.
+- [otpauth](https://github.com/hectorm/otpauth) - One Time Password (HOTP/TOTP) library for Node.js, Deno, Bun and browsers.
 - [steam-totp](https://github.com/DoctorMcKay/node-steam-totp) - A Node.js library for generating Steam-compatible 2FA tokens.
 - [yargs](https://github.com/yargs/yargs) - A command-line argument parsing library for Node.js.
 

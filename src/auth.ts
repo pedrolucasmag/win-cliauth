@@ -7,7 +7,7 @@ LICENSE file in the root directory of this source tree.
  */
 
 import { spawn } from 'child_process';
-import { authenticator } from 'otplib';
+import { TOTP } from 'otpauth';
 import { generateAuthCode } from 'steam-totp';
 import { encrypt } from "./pshell";
 
@@ -21,14 +21,41 @@ type AuthOptions = {
   replace?: boolean;
 };
 
-function getToken({ key, steam }: { key: string; steam?: boolean }): string {
-  return steam ? generateAuthCode(key) : authenticator.generate(key);
+async function synchronizeTime(): Promise<number> {
+
+  AbortSignal.timeout ??= function timeout(ms) {
+    const ctrl = new AbortController()
+    setTimeout(() => ctrl.abort(), ms)
+    return ctrl.signal
+  }
+
+  try {
+    const response = await fetch('http://www.google.com', { signal: AbortSignal.timeout(5000) });
+    const responseHeaders = response.headers;
+    const headerDate = responseHeaders.get('date');
+    const serverTime = headerDate ? Date.parse(headerDate) : Date.now();
+    const localTime = Date.now();
+    const timeDifference = serverTime - localTime;
+    return Date.now() + timeDifference;
+  } catch (error) {
+    return Date.now();
+  }
 }
 
-export function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
+async function getTOTP(key: string): Promise<string> {
+  const auth = new TOTP({ secret: key, digits: 6, period: 30 });
+  const timestamp = await synchronizeTime();
+  return auth.generate({ timestamp });
+}
+
+function getToken({ key, steam }: { key: string; steam?: boolean }): Promise<string> | string {
+  return steam ? generateAuthCode(key) : getTOTP(key).then((code) => code);
+}
+
+export async function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
   const skey = objAuth[`${svc}`];
   if (skey) {
-    const token = getToken({ key: skey, steam:steam })
+    const token = await getToken({ key: skey, steam:steam })
     if (clipboard)
       spawn('clip').stdin.end(token);
     return console.info(token);

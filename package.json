@@ -19,13 +19,15 @@
     "!dist/keys"
   ],
   "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
     "@types/node": "^18.11.10",
     "@types/steam-totp": "^2.1.0",
     "@types/yargs": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "eslint": "^8.22.0",
-    "standard-version": "^9.5.0"
+    "husky": "^8.0.3"
   },
   "os": [
     "win32"
@@ -40,7 +42,7 @@
     "totp"
   ],
   "dependencies": {
-    "otplib": "^12.0.1",
+    "otpauth": "^9.1.4",
     "steam-totp": "^2.1.2",
     "yargs": "^17.5.1"
   }
