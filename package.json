@@ -19,12 +19,15 @@
     "!dist/keys"
   ],
   "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
     "@types/node": "^18.11.10",
     "@types/steam-totp": "^2.1.0",
     "@types/yargs": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "eslint": "^8.22.0",
+    "husky": "^8.0.3",
     "standard-version": "^9.5.0"
   },
   "os": [
