@@ -22,8 +22,15 @@ type AuthOptions = {
 };
 
 async function synchronizeTime(): Promise<number> {
+
+  AbortSignal.timeout ??= function timeout(ms) {
+    const ctrl = new AbortController()
+    setTimeout(() => ctrl.abort(), ms)
+    return ctrl.signal
+  }
+
   try {
-    const response = await fetch('http://www.google.com');
+    const response = await fetch('http://www.google.com', { signal: AbortSignal.timeout(5000) });
     const responseHeaders = response.headers;
     const headerDate = responseHeaders.get('date');
     const serverTime = headerDate ? Date.parse(headerDate) : Date.now();
@@ -31,8 +38,7 @@ async function synchronizeTime(): Promise<number> {
     const timeDifference = serverTime - localTime;
     return Date.now() + timeDifference;
   } catch (error) {
-    console.error('Time synchronization error:', error);
-    throw error;
+    return Date.now();
   }
 }
 
