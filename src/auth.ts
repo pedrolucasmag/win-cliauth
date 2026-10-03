@@ -1,83 +1,98 @@
-/* 
+/*
 Copyright (c) <2022>, <Pedro Lucas Magalhães de Oliveira>
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. 
+LICENSE file in the root directory of this source tree.
  */
 
 import { spawn } from 'child_process';
-import { TOTP } from 'otpauth';
-import { generateAuthCode } from 'steam-totp';
-import { encrypt } from "./pshell";
+import { readFile } from 'fs/promises';
+import { steamCode, steamSecret, totpCode } from './otp';
+import { readSecret } from './prompt';
+import { decrypt, encrypt, Entry } from './pshell';
+import { syncedNow } from './time';
 
-type AuthOptions = {
-  objAuth: Record<string,string>;
-  svc?: string;
-  clipboard?: boolean;
-  steam?: boolean;
-  showsecret? : boolean;
-  sk?: string;
-  replace?: boolean;
-};
+function parseEntry(entry: Entry): { secret: string; steam: boolean } {
+  return typeof entry === 'string' ? { secret: entry, steam: false } : { secret: entry.secret, steam: !!entry.steam };
+}
 
-async function synchronizeTime(): Promise<number> {
+function notFound(name: string) {
+  console.error(`${name} not found.`);
+  process.exitCode = 1;
+}
 
-  AbortSignal.timeout ??= function timeout(ms) {
-    const ctrl = new AbortController()
-    setTimeout(() => ctrl.abort(), ms)
-    return ctrl.signal
+function copyToClipboard(text: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const clip = spawn('clip');
+    clip.on('error', reject);
+    clip.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`clip exited with code ${code}`))));
+    clip.stdin.end(text);
+  });
+}
+
+async function readMaFile(path: string): Promise<string> {
+  const maFile = JSON.parse(await readFile(path, 'utf8'));
+  if (!maFile?.shared_secret)
+    throw new Error('No shared_secret in maFile (if it is encrypted, decrypt it first, e.g. `steamguard decrypt`).');
+  return maFile.shared_secret;
+}
+
+type GetOptions = { name: string; steam?: boolean; clipboard?: boolean; sync?: boolean };
+
+export async function getAuth({ name, steam, clipboard, sync }: GetOptions) {
+  const objAuth = await decrypt();
+  if (!objAuth[name]) return notFound(name);
+  const entry = parseEntry(objAuth[name]);
+  const token = steam || entry.steam
+    ? steamCode(entry.secret, await syncedNow('steam', sync))
+    : totpCode(entry.secret, await syncedNow('totp', sync));
+  if (clipboard) await copyToClipboard(token);
+  console.info(token);
+}
+
+type AddOptions = { name: string; secretKey?: string; steam?: boolean; mafile?: string; replace?: boolean };
+
+export async function addAuth({ name, secretKey, steam, mafile, replace }: AddOptions) {
+  let secret: string;
+  if (mafile) {
+    secret = await readMaFile(mafile);
+    steam = true;
+  } else if (secretKey) {
+    secret = secretKey;
+    console.warn('Tip: omit <secret-key> to be prompted for it, so it does not end up in your shell history.');
+  } else {
+    secret = await readSecret('Secret key: ');
   }
+  if (!secret) throw new Error('No secret key given.');
+  if (/^steam:\/\//i.test(secret)) steam = true;
 
-  try {
-    const response = await fetch('http://www.google.com', { signal: AbortSignal.timeout(5000) });
-    const responseHeaders = response.headers;
-    const headerDate = responseHeaders.get('date');
-    const serverTime = headerDate ? Date.parse(headerDate) : Date.now();
-    const localTime = Date.now();
-    const timeDifference = serverTime - localTime;
-    return Date.now() + timeDifference;
-  } catch (error) {
-    return Date.now();
+  // validates the secret before storing it
+  if (steam) steamSecret(secret);
+  else totpCode(secret, Date.now());
+
+  const objAuth = await decrypt();
+  if (objAuth[name] && !replace) {
+    console.error(`${name} already exists, add --replace to overwrite it.`);
+    process.exitCode = 1;
+    return;
   }
+  objAuth[name] = steam ? { secret, steam: true } : secret;
+  await encrypt(objAuth);
+  console.info(`${name} added!`);
 }
 
-async function getTOTP(key: string): Promise<string> {
-  const auth = new TOTP({ secret: key, digits: 6, period: 30 });
-  const timestamp = await synchronizeTime();
-  return auth.generate({ timestamp });
+export async function removeAuth({ name }: { name: string }) {
+  const objAuth = await decrypt();
+  if (!objAuth[name]) return notFound(name);
+  delete objAuth[name];
+  await encrypt(objAuth);
+  console.info(`${name} removed!`);
 }
 
-function getToken({ key, steam }: { key: string; steam?: boolean }): Promise<string> | string {
-  return steam ? generateAuthCode(key) : getTOTP(key).then((code) => code);
-}
-
-export async function getAuth({ objAuth, svc, clipboard, steam }: AuthOptions) {
-  const skey = objAuth[`${svc}`];
-  if (skey) {
-    const token = await getToken({ key: skey, steam:steam })
-    if (clipboard)
-      spawn('clip').stdin.end(token);
-    return console.info(token);
-  }
-  return console.info(`${svc} not found.`);
-}
-
-export function addAuth({ objAuth, svc, sk, replace }: AuthOptions) {
-  if (objAuth[`${svc}`] && !replace) 
-    return console.info(`${svc} already exists, adds --replace to overwrite it.`)
-  objAuth[`${svc}`] = String(sk)
-  encrypt({ str: JSON.stringify(objAuth) });
-  return console.info(`${svc} added!`);
-}
-
-export function removeAuth({ objAuth, svc }: AuthOptions) {
-  if (!objAuth[`${svc}`]) return console.info(`${svc} not found.`)
-  delete objAuth[`${svc}`];
-  encrypt({ str: JSON.stringify(objAuth) });
-  return console.info(`${svc} removed!`);
-}
-
-export function listAuth({ objAuth, showsecret }: AuthOptions) {
-  return showsecret ? console.table(objAuth) : console.table(Object.keys(objAuth));
+export async function listAuth({ showsecret }: { showsecret?: boolean }) {
+  const objAuth = await decrypt();
+  if (!showsecret) return console.table(Object.keys(objAuth));
+  console.warn('Warning: secret keys are shown in plain text.');
+  console.table(Object.fromEntries(Object.entries(objAuth).map(([name, entry]) => [name, parseEntry(entry)])));
 }

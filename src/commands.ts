@@ -1,75 +1,66 @@
-/* 
+/*
 Copyright (c) <2022>, <Pedro Lucas Magalhães de Oliveira>
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. 
+LICENSE file in the root directory of this source tree.
  */
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { addAuth, removeAuth, getAuth, listAuth } from './auth';
 
-interface Arguments {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [argName: string]: any;
-  _: (string | number)[];
-  "--"?: (string | number)[];
-}
-
-export function handleCommands(objAuth : Record<string,string>) {
-  return yargs(hideBin(process.argv))
+export async function handleCommands() {
+  await yargs(hideBin(process.argv))
     .scriptName("win-cliauth")
     .command(
-      'add <name> <secret-key>',
-      'adds authenticator with given secret key.',
-      (y) => y.options({
-        'replace' : {
-          description: "forces replacement of existing service.",
-          require:false
-        },
-      }),
-      (argv: Arguments) => addAuth({ objAuth, svc: argv.name, sk: argv.secretKey, replace: argv.replace }) 
+      'add <name> [secret-key]',
+      'adds authenticator with given secret key (prompts for it when omitted).',
+      (y) => y
+        .positional('name', { type: 'string', demandOption: true })
+        .positional('secret-key', { type: 'string', description: 'base32 secret, otpauth:// URI, or Steam shared_secret' })
+        .options({
+          'replace': { type: 'boolean', description: "forces replacement of existing service." },
+          'steam': { type: 'boolean', description: "stores it as a Steam Guard authenticator." },
+          'mafile': { type: 'string', description: "imports the Steam shared_secret from a .maFile (SDA / steamguard-cli)." },
+        }),
+      (argv) => addAuth(argv)
     )
     .command(
       'remove <name>',
       'removes the given <name> authenticator.',
-      { },
-      (argv: Arguments) => removeAuth({ objAuth, svc: argv.name })
+      (y) => y.positional('name', { type: 'string', demandOption: true }),
+      (argv) => removeAuth(argv)
     )
     .command(
       'get <name>',
-      'gets the token from service <name> (for steam guard, add --steam)',
-      (y) => y.options({
-        'steam': {
-          description: "gets token from steam authenticator.",
-          required: false
-        },
-        'clipboard': {
-          description: 'adds authenticator code to clipboard',
-          required: false
-        }
-      }),
-      (argv: Arguments) => {
-        getAuth({ objAuth, svc: argv.name, clipboard: argv.clipboard, steam: argv.steam })
-       }
-      
+      'gets the token from service <name>',
+      (y) => y
+        .positional('name', { type: 'string', demandOption: true })
+        .options({
+          'steam': { type: 'boolean', description: "gets token from steam authenticator." },
+          'clipboard': { type: 'boolean', description: 'adds authenticator code to clipboard' },
+          'sync': { type: 'boolean', description: 'forces a time re-sync instead of using the cached offset' },
+        }),
+      (argv) => getAuth(argv)
     )
     .command(
       'list',
       'Prints out the list of authenticators.',
       (y) => y.options({
-        'showsecret' : {
-          description: "Prints out the list with secret keys",
-          require:false
-        },
+        'showsecret': { type: 'boolean', description: "Prints out the list with secret keys" },
       }),
-      (argv: Arguments) => listAuth({ objAuth, showsecret: argv.showsecret})
+      (argv) => listAuth(argv)
     )
     .wrap(null)
-    .showHelpOnFail(true)
     .demandCommand()
     .recommendCommands()
     .strict()
-    .parse();
+    .fail((msg, err, y) => {
+      if (err) throw err;
+      y.showHelp();
+      console.error(`\n${msg}`);
+      process.exit(1);
+    })
+    .parseAsync();
 }
