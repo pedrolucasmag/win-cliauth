@@ -26,7 +26,9 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # Publishes via npm trusted publishing (OIDC), no token needed; requires npm >= 11.5.1
       - if: ${{ steps.release.outputs.release_created }}
-        run: npm install --force && npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm install -g npm@latest
+          npm install --force
+          npm publish
