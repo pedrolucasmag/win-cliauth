@@ -6,7 +6,8 @@
   "license": "BSD-3-Clause",
   "scripts": {
     "build": "tsc",
-    "release": "standard-version",
+    "lint": "eslint . --ext .ts",
+    "test": "tsc && node --test \"dist/test/**/*.test.js\"",
     "prepack": "tsc"
   },
   "bin": {
@@ -19,18 +20,18 @@
   "files": [
     "dist",
     "LICENSE",
-    "!dist/keys"
+    "!dist/test"
   ],
   "devDependencies": {
     "@commitlint/cli": "^17.7.1",
     "@commitlint/config-conventional": "^17.7.0",
     "@types/node": "^18.11.10",
-    "@types/steam-totp": "^2.1.0",
     "@types/yargs": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "eslint": "^8.22.0",
-    "husky": "^8.0.3"
+    "husky": "^8.0.3",
+    "typescript": "^5.4.0"
   },
   "os": [
     "win32"
@@ -42,11 +43,14 @@
     "windows",
     "steamguard",
     "2fa",
-    "totp"
+    "totp",
+    "steam"
   ],
   "dependencies": {
     "otpauth": "^9.1.4",
-    "steam-totp": "^2.1.2",
     "yargs": "^17.5.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
