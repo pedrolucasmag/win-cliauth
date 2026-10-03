@@ -23,9 +23,9 @@ function fromBase32(str: string): Buffer {
 
 /**
  * Decodes a Steam Guard secret in any of the formats tools export it in:
- * - base64 `shared_secret` (maFile from SDA / steamguard-cli / twinguard)
+ * - base64 `shared_secret` (as in a .maFile)
  * - 40-char hex
- * - base32 (WinAuth, Aegis, steamguard-cli `qr`), `steam://BASE32` or an otpauth:// URI
+ * - base32, `steam://BASE32` or an otpauth:// URI
  */
 export function steamSecret(secret: string): Buffer {
   const s = secret.trim();

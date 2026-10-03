@@ -22,7 +22,7 @@ export async function handleCommands() {
         .options({
           'replace': { type: 'boolean', description: "forces replacement of existing service." },
           'steam': { type: 'boolean', description: "stores it as a Steam Guard authenticator." },
-          'mafile': { type: 'string', description: "imports the Steam shared_secret from a .maFile (SDA / steamguard-cli)." },
+          'mafile': { type: 'string', description: "imports the Steam shared_secret from a .maFile." },
         }),
       (argv) => addAuth(argv)
     )

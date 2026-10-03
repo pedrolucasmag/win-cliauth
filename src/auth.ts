@@ -34,7 +34,7 @@ function copyToClipboard(text: string): Promise<void> {
 async function readMaFile(path: string): Promise<string> {
   const maFile = JSON.parse(await readFile(path, 'utf8'));
   if (!maFile?.shared_secret)
-    throw new Error('No shared_secret in maFile (if it is encrypted, decrypt it first, e.g. `steamguard decrypt`).');
+    throw new Error('No shared_secret in maFile (if it is encrypted, decrypt it first).');
   return maFile.shared_secret;
 }
 

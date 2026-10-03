@@ -36,19 +36,15 @@ win-cliauth --help
 
 ## Steam Guard
 
-Steam's code algorithm hasn't changed, but the old ways of getting the secret (WinAuth's Steam import, the Python `steam` library) stopped working when Steam replaced its login API in 2023. These tools still work:
-
-- [steamguard-cli](https://github.com/dyc3/steamguard-cli): `steamguard setup` creates a `.maFile` in `%APPDATA%\steamguard-cli\maFiles`. This makes it your authenticator in place of the Steam mobile app.
-- [Steam Desktop Authenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator): also produces a `.maFile` (turn encryption off, or decrypt it before importing).
-- [twinguard](https://github.com/Jasperhino/twinguard): gets the same `shared_secret` as the Steam mobile app while you set it up, so both keep working.
-
-Then import it:
+Steam Guard authenticators can be imported from a `.maFile`:
 
 ```
 win-cliauth add steam --mafile path\to\account.maFile
 ```
 
-or add the secret directly with `add steam --steam`. The secret can be a base64 `shared_secret`, base32 secret, `steam://` value or `otpauth://` URI. Steam codes are synced against Steam's own time server.
+Encrypted `.maFile`s must be decrypted before importing. You can also add the secret directly with `add steam --steam`; it can be a base64 `shared_secret`, base32 secret, `steam://` value or `otpauth://` URI. Steam codes are synced against Steam's own time server.
+
+Anyone with your `shared_secret` can generate your Steam Guard codes, so keep `.maFile`s private and don't leave them lying around after importing (see [Backups](#backups)).
 
 ## Security
 
@@ -56,6 +52,12 @@ or add the secret directly with `add steam --steam`. The secret can be a base64 
 - The encrypted file lives in `%AppData%\win-cliauth\keys` and is written atomically; the previous version is kept as `keys.bak`.
 - The encrypted file can only be read by the same Windows user account where it was created.
 - Time is synced over HTTPS (Google for TOTP, Steam for Steam Guard) and the offset is cached for 6 hours in `%AppData%\win-cliauth\time.json`.
+
+## Backups
+
+The vault is tied to your Windows user account: reinstalling Windows or switching accounts makes it unreadable, even if you copied the `keys` file. Before that happens, run `win-cliauth list --showsecret` and store the secrets somewhere safe (e.g. a password manager), along with each service's recovery codes, such as the Steam revocation code from your `.maFile`.
+
+win-cliauth is provided without warranty; see the [license](LICENSE).
 
 ## Credits
 
