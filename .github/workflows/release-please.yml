@@ -2,6 +2,8 @@ on:
   push:
     branches:
       - main
+  # Manual run: publishes the current main to npm (e.g. to retry a failed publish)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,15 +22,16 @@ jobs:
           release-type: node
 
       - uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.release_created || github.event_name == 'workflow_dispatch' }}
       - uses: actions/setup-node@v4
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.release_created || github.event_name == 'workflow_dispatch' }}
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
       # Publishes via npm trusted publishing (OIDC), no token needed; requires npm >= 11.5.1
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.release_created || github.event_name == 'workflow_dispatch' }}
         run: |
           npm install -g npm@latest
           npm install --force
+          npm run build
           npm publish
