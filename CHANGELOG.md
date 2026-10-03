@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.4](https://github.com/pedrolucasmag/win-cliauth/compare/v1.0.3...v1.0.4) (2026-10-03)
+
+
+### Bug Fixes
+
+* harden vault I/O, time sync and Steam Guard support ([ee40934](https://github.com/pedrolucasmag/win-cliauth/commit/ee40934c0280b4248c1b0b7ddce96172676c9055))
+
 ## 1.0.3 (2023-08-14)
 
 
