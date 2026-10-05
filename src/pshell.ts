@@ -67,9 +67,11 @@ export async function decrypt(): Promise<Vault> {
     }
     `,
   });
-  if (!output) return {};
+  // null prototype: names like "toString" or "__proto__" are plain keys, not inherited properties
+  const vault: Vault = Object.create(null);
+  if (!output) return vault;
   try {
-    return JSON.parse(Buffer.from(output, 'base64').toString('utf8'));
+    return Object.assign(vault, JSON.parse(Buffer.from(output, 'base64').toString('utf8')));
   } catch {
     throw new Error('The key file is corrupted (a backup may exist at %AppData%\\win-cliauth\\keys.bak).');
   }
