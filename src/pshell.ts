@@ -11,15 +11,35 @@ import { spawn } from 'child_process';
 export type Entry = string | { secret: string; steam?: boolean };
 export type Vault = Record<string, Entry>;
 
+// Windows PowerShell must not inherit PowerShell 7's module path (set when win-cliauth runs from pwsh),
+// or it fails to load its own modules such as Microsoft.PowerShell.Security.
+export function powershellEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return Object.fromEntries(Object.entries(env).filter(([key]) => key.toUpperCase() !== 'PSMODULEPATH'));
+}
+
+// Turns PowerShell's serialized "#< CLIXML" error output into plain text.
+export function readableError(stderr: string): string {
+  if (!stderr.startsWith('#< CLIXML')) return stderr;
+  const errors = [...stderr.matchAll(/<S S="Error">([\s\S]*?)<\/S>/g)].map(([, text]) => text);
+  return errors
+    .join('')
+    .replace(/_x000D__x000A_/g, '\n')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+    .trim() || stderr;
+}
+
 // Secrets never appear in the script text (which is visible in process listings):
 // they travel through stdin/stdout as base64-encoded UTF-8.
 function pshell({ script, input = '' }: { script: string; input?: string }): Promise<string> {
-  const encoded = Buffer.from(`$ErrorActionPreference = 'Stop'\n${script}`, 'utf16le').toString('base64');
+  const encoded = Buffer.from(
+    `$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n${script}`,
+    'utf16le'
+  ).toString('base64');
   return new Promise((resolve, reject) => {
     const ps = spawn(
       'powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded],
-      { stdio: 'pipe', windowsHide: true }
+      ['-NoProfile', '-NonInteractive', '-OutputFormat', 'Text', '-EncodedCommand', encoded],
+      { stdio: 'pipe', windowsHide: true, env: powershellEnv() }
     );
     let stdout = '';
     let stderr = '';
@@ -28,7 +48,7 @@ function pshell({ script, input = '' }: { script: string; input?: string }): Pro
     ps.on('error', (err) => reject(new Error(`Could not start PowerShell: ${err.message}`)));
     ps.on('close', (code) => {
       if (code === 0) return resolve(stdout.trim());
-      reject(new Error(stderr.trim() || `PowerShell exited with code ${code}`));
+      reject(new Error(readableError(stderr.trim()) || `PowerShell exited with code ${code}`));
     });
     ps.stdin.end(input);
   });
