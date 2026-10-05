@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://www.conventionalcommits.org) for commit guidelines.
 
+## [1.0.5](https://github.com/pedrolucasmag/win-cliauth/compare/v1.0.4...v1.0.5) (2026-10-05)
+
+
+### Bug Fixes
+
+* save the vault when run from PowerShell 7 ([d2c4271](https://github.com/pedrolucasmag/win-cliauth/commit/d2c427104717d68f2fe420389de5249d610a1cdc))
+* treat built-in property names as ordinary account names ([c3e4dcb](https://github.com/pedrolucasmag/win-cliauth/commit/c3e4dcbe26ecf07324470ef2fd922c40ad1335ac))
+
 ## [1.0.4](https://github.com/pedrolucasmag/win-cliauth/compare/v1.0.3...v1.0.4) (2026-10-03)
 
 
