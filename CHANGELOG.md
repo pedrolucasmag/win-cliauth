@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file. See [Conventional Commits](https://www.conventionalcommits.org) for commit guidelines.
 
 ## [1.0.4](https://github.com/pedrolucasmag/win-cliauth/compare/v1.0.3...v1.0.4) (2026-10-03)
 
