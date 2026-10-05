@@ -6,8 +6,9 @@
   "license": "BSD-3-Clause",
   "scripts": {
     "build": "tsc",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "test": "tsc && node --test \"dist/test/**/*.test.js\"",
+    "prepare": "husky",
     "prepack": "tsc"
   },
   "bin": {
@@ -23,15 +24,16 @@
     "!dist/test"
   ],
   "devDependencies": {
-    "@commitlint/cli": "^17.7.1",
-    "@commitlint/config-conventional": "^17.7.0",
-    "@types/node": "^18.11.10",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^20.19.0",
     "@types/yargs": "^17.0.10",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^8.57.0",
-    "husky": "^8.0.3",
-    "typescript": "^5.4.0"
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "husky": "^9.1.7",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.71.1"
   },
   "os": [
     "win32"
@@ -51,6 +53,6 @@
     "yargs": "^17.5.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }
