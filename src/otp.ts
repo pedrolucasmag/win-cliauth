@@ -61,3 +61,9 @@ export function totpCode(secret: string, timestamp: number): string {
     : new TOTP({ secret: Secret.fromBase32(s.replace(/[\s-]/g, '').replace(/=+$/, '').toUpperCase()), digits: 6, period: 30 });
   return totp.generate({ timestamp });
 }
+
+/** Seconds each code is valid for (Steam Guard and plain secrets use 30). */
+export function codePeriod(secret: string, steam: boolean): number {
+  const s = secret.trim();
+  return !steam && /^otpauth:\/\//i.test(s) ? parseUri(s).period : 30;
+}

@@ -10,8 +10,11 @@ LICENSE file in the root directory of this source tree.
 
 
 import { handleCommands } from './src/commands';
+import { notifyUpdate } from './src/update';
 
-handleCommands().catch((error) => {
-  console.error(`Error: ${error instanceof Error ? error.message : error}`);
-  process.exitCode = 1;
-});
+handleCommands()
+  .catch((error) => {
+    console.error(`Error: ${error instanceof Error ? error.message : error}`);
+    process.exitCode = 1;
+  })
+  .then(notifyUpdate);

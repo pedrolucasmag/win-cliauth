@@ -8,7 +8,7 @@ LICENSE file in the root directory of this source tree.
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { addAuth, removeAuth, getAuth, listAuth } from './auth';
+import { addAuth, removeAuth, getAuth, listAuth, renameAuth, exportAuth, importAuth } from './auth';
 
 export async function handleCommands() {
   await yargs(hideBin(process.argv))
@@ -34,12 +34,13 @@ export async function handleCommands() {
     )
     .command(
       'get <name>',
-      'gets the token from service <name>',
+      'gets the token from service <name> (a unique prefix of the name is enough)',
       (y) => y
         .positional('name', { type: 'string', demandOption: true })
         .options({
           'steam': { type: 'boolean', description: "gets token from steam authenticator." },
           'clipboard': { type: 'boolean', description: 'adds authenticator code to clipboard' },
+          'clear': { type: 'number', default: 30, description: 'seconds before the copied code is cleared from the clipboard (0 keeps it)' },
           'sync': { type: 'boolean', description: 'forces a time re-sync instead of using the cached offset' },
         }),
       (argv) => getAuth(argv)
@@ -51,6 +52,34 @@ export async function handleCommands() {
         'showsecret': { type: 'boolean', description: "Prints out the list with secret keys" },
       }),
       (argv) => listAuth(argv)
+    )
+    .command(
+      'rename <old-name> <new-name>',
+      'renames an authenticator.',
+      (y) => y
+        .positional('old-name', { type: 'string', demandOption: true })
+        .positional('new-name', { type: 'string', demandOption: true }),
+      (argv) => renameAuth(argv)
+    )
+    .command(
+      'export <file>',
+      'saves all authenticators to a password-protected backup file.',
+      (y) => y
+        .positional('file', { type: 'string', demandOption: true })
+        .options({
+          'force': { type: 'boolean', description: 'overwrites the file if it exists.' },
+        }),
+      (argv) => exportAuth(argv)
+    )
+    .command(
+      'import <file>',
+      'adds the authenticators from a backup file made with export.',
+      (y) => y
+        .positional('file', { type: 'string', demandOption: true })
+        .options({
+          'replace': { type: 'boolean', description: 'overwrites authenticators that already exist.' },
+        }),
+      (argv) => importAuth(argv)
     )
     .wrap(null)
     .demandCommand()

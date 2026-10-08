@@ -84,6 +84,28 @@ test('vault round trip through PowerShell', { skip }, async (t) => {
     assert.ok(cli(['list', '--showsecret']).stdout.includes(BASE32));
   });
 
+  await t.test('gets by unique prefix and renames', () => {
+    assertCode(cli(['get', 'BOB']).stdout, (ts) => totpCode(BASE32, ts));
+    assert.equal(cli(['rename', "bob's account", 'bob']).code, 0);
+    assert.equal(cli(['rename', 'bob', 'steam']).code, 1, 'must not overwrite an existing name');
+    assert.equal(cli(['rename', 'missing', 'x']).code, 1);
+    assertCode(cli(['get', 'bob']).stdout, (ts) => totpCode(BASE32, ts));
+    assert.equal(cli(['rename', 'bob', "bob's account"]).code, 0);
+  });
+
+  await t.test('exports and imports a password-protected backup', () => {
+    const backup = join(appData, 'backup.json');
+    assert.equal(cli(['export', backup], 'short').code, 1, 'rejects short passwords');
+    assert.equal(cli(['export', backup], 'correct horse').code, 0);
+    assert.equal(cli(['export', backup], 'correct horse').code, 1, 'does not overwrite without --force');
+    assert.equal(cli(['remove', 'steam']).code, 0);
+    assert.equal(cli(['import', backup], 'wrong horse').code, 1);
+    const imported = cli(['import', backup], 'correct horse');
+    assert.equal(imported.code, 0, imported.stderr);
+    assert.match(imported.stdout, /1 authenticator\(s\) imported/);
+    assertCode(cli(['get', 'steam']).stdout, (ts) => steamCode(STEAM, ts));
+  });
+
   await t.test('removes accounts', () => {
     assert.equal(cli(['remove', "bob's account"]).code, 0);
     assert.equal(cli(['get', "bob's account"]).code, 1);
