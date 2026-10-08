@@ -17,6 +17,7 @@ win-cliauth provides a command-line interface for managing OTP (One-Time Passwor
 - `add <name> --replace`: Adds an authenticator, replacing an existing one with the same name.
 - `add <name> --steam`: Adds a Steam Guard authenticator (see [Steam Guard](#steam-guard)).
 - `add <name> --mafile <path>`: Imports a Steam Guard authenticator from a `.maFile`.
+- `add <name> --hotp [--counter <n>]`: Adds a counter-based (HOTP) authenticator from a base32 secret; `otpauth://hotp/` links are detected automatically.
 - `remove <name>`: Removes the authenticator with the specified name.
 - `get <name>`: Retrieves the token and shows how many seconds it stays valid. Any unique start of the name works, in any case (`get micro` for `microsoft`). If the code is about to expire, it waits for the next one.
 - `get <name> --clipboard`: Retrieves the token and adds it to the clipboard, clearing it again after 30 seconds (`--clear <seconds>` to change, `--clear 0` to keep it).
@@ -29,6 +30,8 @@ win-cliauth provides a command-line interface for managing OTP (One-Time Passwor
 - `import <file>`: Adds the authenticators from a backup file; existing names are kept unless `--replace` is given.
 
 The secret key can be a base32 secret or an `otpauth://totp/...` URI (its digits, period and algorithm are respected).
+
+Counter-based (HOTP) authenticators are also supported, though rare: each `get` shows the next code and saves the new counter, so only ask for a code when you are going to use it.
 
 Commands exit with a non-zero code when they fail (e.g. authenticator not found), so they can be used in scripts. When the output is not a terminal, `get` prints only the code.
 

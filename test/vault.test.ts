@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { after, test } from 'node:test';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { steamCode, totpCode } from '../src/otp';
+import { hotpCode, steamCode, totpCode } from '../src/otp';
 
 // End-to-end tests through PowerShell/DPAPI; they need Windows (run in CI on windows-latest).
 const skip = process.platform !== 'win32' && 'needs Windows (PowerShell + DPAPI)';
@@ -104,6 +104,20 @@ test('vault round trip through PowerShell', { skip }, async (t) => {
     assert.equal(imported.code, 0, imported.stderr);
     assert.match(imported.stdout, /1 authenticator\(s\) imported/);
     assertCode(cli(['get', 'steam']).stdout, (ts) => steamCode(STEAM, ts));
+  });
+
+  await t.test('HOTP codes advance the stored counter on every get', () => {
+    assert.equal(cli(['add', 'bank'], `otpauth://hotp/Bank:me?secret=${BASE32}&counter=3`).code, 0);
+    assert.equal(cli(['get', 'bank']).stdout, hotpCode(BASE32, 3));
+    assert.equal(cli(['get', 'bank']).stdout, hotpCode(BASE32, 4));
+    assert.equal(cli(['add', 'token', '--hotp', '--counter', '9'], BASE32).code, 0);
+    assert.equal(cli(['get', 'token']).stdout, hotpCode(BASE32, 9));
+    assert.equal(cli(['add', 'bad', '--steam', '--hotp'], STEAM).code, 1, 'Steam codes are time-based');
+    const watch = cli(['get', 'bank', '--watch']);
+    assert.equal(watch.code, 1);
+    assert.equal(cli(['get', 'bank']).stdout, hotpCode(BASE32, 5), 'a refused command does not use up a code');
+    assert.equal(cli(['remove', 'bank']).code, 0);
+    assert.equal(cli(['remove', 'token']).code, 0);
   });
 
   await t.test('--watch needs a terminal', () => {

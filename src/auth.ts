@@ -10,13 +10,15 @@ import { spawn } from 'child_process';
 import { readFile, writeFile } from 'fs/promises';
 import { decryptBackup, encryptBackup } from './backup';
 import { findName } from './names';
-import { codePeriod, steamCode, steamSecret, totpCode } from './otp';
+import { codePeriod, hotpCode, initialCounter, isHotpUri, steamCode, steamSecret, totpCode } from './otp';
 import { readSecret } from './prompt';
 import { decrypt, encrypt, Entry, powershellEnv } from './pshell';
 import { syncedNow } from './time';
 
-function parseEntry(entry: Entry): { secret: string; steam: boolean } {
-  return typeof entry === 'string' ? { secret: entry, steam: false } : { secret: entry.secret, steam: !!entry.steam };
+function parseEntry(entry: Entry): { secret: string; steam: boolean; counter?: number } {
+  return typeof entry === 'string'
+    ? { secret: entry, steam: false }
+    : { secret: entry.secret, steam: !!entry.steam, counter: entry.counter };
 }
 
 function notFound(name: string) {
@@ -79,13 +81,25 @@ export async function getAuth({ name, steam, clipboard, clear = 30, sync, watch 
     return;
   }
   const entry = parseEntry(objAuth[found.name]);
-  const isSteam = !!(steam || entry.steam);
-  const period = codePeriod(entry.secret, isSteam);
-  const generate = (ts: number) => (isSteam ? steamCode(entry.secret, ts) : totpCode(entry.secret, ts));
   const copy = async (token: string) => {
     await copyToClipboard(token);
     if (clear > 0) clearClipboardLater(token, clear);
   };
+
+  if (entry.counter !== undefined) {
+    // HOTP: each code is used once; the next counter is saved before the code is shown
+    if (watch) throw new Error('--watch only works with time-based codes.');
+    const token = hotpCode(entry.secret, entry.counter);
+    objAuth[found.name] = { secret: entry.secret, counter: entry.counter + 1 };
+    await encrypt(objAuth);
+    if (clipboard) await copy(token);
+    console.info(token);
+    return;
+  }
+
+  const isSteam = !!(steam || entry.steam);
+  const period = codePeriod(entry.secret, isSteam);
+  const generate = (ts: number) => (isSteam ? steamCode(entry.secret, ts) : totpCode(entry.secret, ts));
   let timestamp = await syncedNow(isSteam ? 'steam' : 'totp', sync);
   const msLeft = (ts: number) => period * 1000 - (ts % (period * 1000));
 
@@ -122,9 +136,17 @@ export async function getAuth({ name, steam, clipboard, clear = 30, sync, watch 
   console.info(process.stdout.isTTY ? `${token}  (${Math.ceil(msLeft(timestamp) / 1000)}s left)` : token);
 }
 
-type AddOptions = { name: string; secretKey?: string; steam?: boolean; mafile?: string; replace?: boolean };
+type AddOptions = {
+  name: string;
+  secretKey?: string;
+  steam?: boolean;
+  mafile?: string;
+  replace?: boolean;
+  hotp?: boolean;
+  counter?: number;
+};
 
-export async function addAuth({ name, secretKey, steam, mafile, replace }: AddOptions) {
+export async function addAuth({ name, secretKey, steam, mafile, replace, hotp, counter }: AddOptions) {
   let secret: string;
   if (mafile) {
     secret = await readMaFile(mafile);
@@ -137,9 +159,14 @@ export async function addAuth({ name, secretKey, steam, mafile, replace }: AddOp
   }
   if (!secret) throw new Error('No secret key given.');
   if (/^steam:\/\//i.test(secret)) steam = true;
+  if (isHotpUri(secret) || counter !== undefined) hotp = true;
+  if (steam && hotp) throw new Error('Steam Guard codes are time-based; --hotp and --counter do not apply.');
+  if (counter !== undefined && (!Number.isSafeInteger(counter) || counter < 0))
+    throw new Error('--counter must be a whole number, 0 or more.');
 
   // validates the secret before storing it
   if (steam) steamSecret(secret);
+  else if (hotp) hotpCode(secret, 0);
   else totpCode(secret, Date.now());
 
   const objAuth = await decrypt();
@@ -148,7 +175,8 @@ export async function addAuth({ name, secretKey, steam, mafile, replace }: AddOp
     process.exitCode = 1;
     return;
   }
-  objAuth[name] = steam ? { secret, steam: true } : secret;
+  if (hotp) objAuth[name] = { secret, counter: counter ?? initialCounter(secret) };
+  else objAuth[name] = steam ? { secret, steam: true } : secret;
   await encrypt(objAuth);
   console.info(`${name} added!`);
 }

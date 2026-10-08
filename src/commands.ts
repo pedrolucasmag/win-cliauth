@@ -18,11 +18,13 @@ export async function handleCommands() {
       'adds authenticator with given secret key (prompts for it when omitted).',
       (y) => y
         .positional('name', { type: 'string', demandOption: true })
-        .positional('secret-key', { type: 'string', description: 'base32 secret, otpauth:// URI, or Steam shared_secret' })
+        .positional('secret-key', { type: 'string', description: 'base32 secret, otpauth://totp/ or otpauth://hotp/ URI, or Steam shared_secret' })
         .options({
           'replace': { type: 'boolean', description: "forces replacement of existing service." },
           'steam': { type: 'boolean', description: "stores it as a Steam Guard authenticator." },
           'mafile': { type: 'string', description: "imports the Steam shared_secret from a .maFile." },
+          'hotp': { type: 'boolean', description: "stores it as a counter-based (HOTP) authenticator (otpauth://hotp/ links are detected)." },
+          'counter': { type: 'number', description: "HOTP counter to start from (default: the link's counter, or 0)." },
         }),
       (argv) => addAuth(argv)
     )

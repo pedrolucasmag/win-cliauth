@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
 import { test } from 'node:test';
-import { steamCode, steamSecret, totpCode } from '../src/otp';
+import { codePeriod, hotpCode, initialCounter, isHotpUri, steamCode, steamSecret, totpCode } from '../src/otp';
 
 // RFC 6238 SHA1 seed "12345678901234567890"
 const ASCII = Buffer.from('12345678901234567890');
@@ -41,7 +41,8 @@ test('TOTP accepts padded and dashed base32 and honours the period', () => {
 test('TOTP rejects invalid secrets and URIs', () => {
   assert.throws(() => totpCode('not a secret!', 0), /not a base32 character/);
   assert.throws(() => totpCode('', 0), /empty/);
-  assert.throws(() => totpCode(`otpauth://hotp/x?secret=${BASE32}&counter=1`, 0), /Only TOTP/);
+  assert.throws(() => totpCode(`otpauth://hotp/x?secret=${BASE32}&counter=1`, 0), /counter-based/);
+  assert.throws(() => totpCode(`otpauth://other/x?secret=${BASE32}`, 0), /Unsupported otpauth/);
   assert.throws(() => totpCode('otpauth://totp/x?digits=6', 0), /no secret/);
   assert.throws(() => totpCode(`otpauth://totp/x?secret=${BASE32}&algorithm=MD5`, 0), /Unsupported algorithm/);
   assert.throws(() => totpCode(`otpauth://totp/x?secret=${BASE32}&digits=0`, 0), /Invalid digits/);
@@ -65,4 +66,24 @@ test('Steam secret accepts base64, hex, base32, steam:// and otpauth://', () => 
     assert.deepEqual(steamSecret(secret), ASCII, secret);
   }
   assert.throws(() => steamSecret('***'));
+});
+
+test('HOTP matches RFC 4226 vectors', () => {
+  const expected = ['755224', '287082', '359152', '969429', '338314', '254676', '287922', '162583', '399871', '520489'];
+  expected.forEach((code, counter) => {
+    assert.equal(hotpCode(BASE32, counter), code);
+    assert.equal(hotpCode(`otpauth://hotp/x?secret=${BASE32}`, counter), code);
+  });
+  assert.equal(hotpCode(`otpauth://hotp/x?secret=${BASE32}&digits=8`, 0), '84755224');
+});
+
+test('HOTP URIs are detected and start from their counter', () => {
+  const uri = `otpauth://hotp/Bank:me?secret=${BASE32}&counter=7&issuer=Bank`;
+  assert.ok(isHotpUri(uri));
+  assert.ok(!isHotpUri(`otpauth://totp/x?secret=${BASE32}`));
+  assert.ok(!isHotpUri(BASE32));
+  assert.equal(initialCounter(uri), 7);
+  assert.equal(initialCounter(`otpauth://hotp/x?secret=${BASE32}`), 0);
+  assert.throws(() => initialCounter(`otpauth://hotp/x?secret=${BASE32}&counter=-1`), /Invalid counter/);
+  assert.throws(() => codePeriod(uri, false), /counter-based/);
 });
