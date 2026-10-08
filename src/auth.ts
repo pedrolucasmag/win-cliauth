@@ -61,9 +61,16 @@ async function readMaFile(path: string): Promise<string> {
   return maFile.shared_secret;
 }
 
-type GetOptions = { name: string; steam?: boolean; clipboard?: boolean; clear?: number; sync?: boolean };
+export function countdown(code: string, msLeft: number, period: number) {
+  const width = 20;
+  const filled = Math.round((msLeft / (period * 1000)) * width);
+  return `${code}  ${'█'.repeat(filled)}${'░'.repeat(width - filled)} ${String(Math.ceil(msLeft / 1000)).padStart(2)}s`;
+}
 
-export async function getAuth({ name, steam, clipboard, clear = 30, sync }: GetOptions) {
+type GetOptions = { name: string; steam?: boolean; clipboard?: boolean; clear?: number; sync?: boolean; watch?: boolean };
+
+export async function getAuth({ name, steam, clipboard, clear = 30, sync, watch }: GetOptions) {
+  if (watch && !process.stdout.isTTY) throw new Error('--watch needs a terminal.');
   const objAuth = await decrypt();
   const found = findName(Object.keys(objAuth), name);
   if ('error' in found) {
@@ -74,24 +81,45 @@ export async function getAuth({ name, steam, clipboard, clear = 30, sync }: GetO
   const entry = parseEntry(objAuth[found.name]);
   const isSteam = !!(steam || entry.steam);
   const period = codePeriod(entry.secret, isSteam);
+  const generate = (ts: number) => (isSteam ? steamCode(entry.secret, ts) : totpCode(entry.secret, ts));
+  const copy = async (token: string) => {
+    await copyToClipboard(token);
+    if (clear > 0) clearClipboardLater(token, clear);
+  };
   let timestamp = await syncedNow(isSteam ? 'steam' : 'totp', sync);
+  const msLeft = (ts: number) => period * 1000 - (ts % (period * 1000));
+
+  if (watch) {
+    // keeps the code on screen, switching to the next one as it changes, until Ctrl+C
+    const offset = timestamp - Date.now();
+    process.on('SIGINT', () => {
+      process.stdout.write('\n');
+      process.exit(0);
+    });
+    console.info(`${found.name} (Ctrl+C to stop)`);
+    let last = '';
+    for (;;) {
+      const now = Date.now() + offset;
+      const token = generate(now);
+      if (token !== last && clipboard) await copy(token);
+      last = token;
+      process.stdout.write(`\r${countdown(token, msLeft(now), period)} `);
+      await sleep(1000 - (now % 1000) + 10);
+    }
+  }
 
   // a code about to expire is of little use: wait for the next one
-  const msLeft = () => period * 1000 - (timestamp % (period * 1000));
-  if (msLeft() <= 2000) {
-    const wait = msLeft();
+  if (msLeft(timestamp) <= 2000) {
+    const wait = msLeft(timestamp);
     if (process.stderr.isTTY) console.error('Code about to expire, waiting for the next one...');
     await sleep(wait);
     timestamp += wait;
   }
 
-  const token = isSteam ? steamCode(entry.secret, timestamp) : totpCode(entry.secret, timestamp);
-  if (clipboard) {
-    await copyToClipboard(token);
-    if (clear > 0) clearClipboardLater(token, clear);
-  }
+  const token = generate(timestamp);
+  if (clipboard) await copy(token);
   // scripts get only the code; people also see how long it stays valid
-  console.info(process.stdout.isTTY ? `${token}  (${Math.ceil(msLeft() / 1000)}s left)` : token);
+  console.info(process.stdout.isTTY ? `${token}  (${Math.ceil(msLeft(timestamp) / 1000)}s left)` : token);
 }
 
 type AddOptions = { name: string; secretKey?: string; steam?: boolean; mafile?: string; replace?: boolean };

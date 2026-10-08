@@ -106,6 +106,12 @@ test('vault round trip through PowerShell', { skip }, async (t) => {
     assertCode(cli(['get', 'steam']).stdout, (ts) => steamCode(STEAM, ts));
   });
 
+  await t.test('--watch needs a terminal', () => {
+    const result = cli(['get', 'steam', '--watch']);
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /--watch needs a terminal/);
+  });
+
   await t.test('removes accounts', () => {
     assert.equal(cli(['remove', "bob's account"]).code, 0);
     assert.equal(cli(['get', "bob's account"]).code, 1);
