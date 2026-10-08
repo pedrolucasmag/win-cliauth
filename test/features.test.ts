@@ -1,5 +1,6 @@
 import { strict as assert } from 'assert';
 import { test } from 'node:test';
+import { countdown } from '../src/auth';
 import { decryptBackup, encryptBackup } from '../src/backup';
 import { findName } from '../src/names';
 import { codePeriod } from '../src/otp';
@@ -54,4 +55,10 @@ test('version comparison', () => {
   assert.ok(!isNewer('1.0.5', '1.0.5'));
   assert.ok(!isNewer('1.0.4', '1.0.5'));
   assert.match(currentVersion(), /^\d+\.\d+\.\d+/);
+});
+
+test('countdown bar shrinks with the time left', () => {
+  assert.equal(countdown('123456', 30_000, 30), `123456  ${'█'.repeat(20)} 30s`);
+  assert.equal(countdown('123456', 15_000, 30), `123456  ${'█'.repeat(10)}${'░'.repeat(10)} 15s`);
+  assert.equal(countdown('BC2DF', 1_500, 30), `BC2DF  ${'█'.repeat(1)}${'░'.repeat(19)}  2s`);
 });

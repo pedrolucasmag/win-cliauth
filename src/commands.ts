@@ -42,6 +42,7 @@ export async function handleCommands() {
           'clipboard': { type: 'boolean', description: 'adds authenticator code to clipboard' },
           'clear': { type: 'number', default: 30, description: 'seconds before the copied code is cleared from the clipboard (0 keeps it)' },
           'sync': { type: 'boolean', description: 'forces a time re-sync instead of using the cached offset' },
+          'watch': { type: 'boolean', description: 'keeps the code on screen with a countdown, updating it until Ctrl+C' },
         }),
       (argv) => getAuth(argv)
     )

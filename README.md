@@ -21,6 +21,7 @@ win-cliauth provides a command-line interface for managing OTP (One-Time Passwor
 - `get <name>`: Retrieves the token and shows how many seconds it stays valid. Any unique start of the name works, in any case (`get micro` for `microsoft`). If the code is about to expire, it waits for the next one.
 - `get <name> --clipboard`: Retrieves the token and adds it to the clipboard, clearing it again after 30 seconds (`--clear <seconds>` to change, `--clear 0` to keep it).
 - `get <name> --sync`: Forces a fresh time sync before generating the token.
+- `get <name> --watch`: Keeps the code on screen with a countdown bar, switching to the next code as it changes, until Ctrl+C.
 - `list`: Lists all registered authenticators.
 - `list --showsecret`: Lists all registered authenticators, including the secret keys.
 - `rename <old-name> <new-name>`: Renames an authenticator.
