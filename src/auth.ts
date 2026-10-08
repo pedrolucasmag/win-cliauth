@@ -7,10 +7,12 @@ LICENSE file in the root directory of this source tree.
  */
 
 import { spawn } from 'child_process';
-import { readFile } from 'fs/promises';
-import { steamCode, steamSecret, totpCode } from './otp';
+import { readFile, writeFile } from 'fs/promises';
+import { decryptBackup, encryptBackup } from './backup';
+import { findName } from './names';
+import { codePeriod, steamCode, steamSecret, totpCode } from './otp';
 import { readSecret } from './prompt';
-import { decrypt, encrypt, Entry } from './pshell';
+import { decrypt, encrypt, Entry, powershellEnv } from './pshell';
 import { syncedNow } from './time';
 
 function parseEntry(entry: Entry): { secret: string; steam: boolean } {
@@ -31,6 +33,27 @@ function copyToClipboard(text: string): Promise<void> {
   });
 }
 
+// Clears the clipboard after a delay, in a detached process so the command returns
+// right away; it leaves the clipboard alone if something else was copied meanwhile.
+function clearClipboardLater(token: string, seconds: number) {
+  const script = `
+    Start-Sleep -Seconds $env:WIN_CLIAUTH_CLEAR_AFTER
+    if ("$(Get-Clipboard -Raw)".Trim() -eq $env:WIN_CLIAUTH_TOKEN) {
+      Add-Type -AssemblyName System.Windows.Forms
+      [System.Windows.Forms.Clipboard]::Clear()
+    }`;
+  spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')], {
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+    env: { ...powershellEnv(), WIN_CLIAUTH_TOKEN: token, WIN_CLIAUTH_CLEAR_AFTER: String(seconds) },
+  }).unref();
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function readMaFile(path: string): Promise<string> {
   const maFile = JSON.parse(await readFile(path, 'utf8'));
   if (!maFile?.shared_secret)
@@ -38,17 +61,37 @@ async function readMaFile(path: string): Promise<string> {
   return maFile.shared_secret;
 }
 
-type GetOptions = { name: string; steam?: boolean; clipboard?: boolean; sync?: boolean };
+type GetOptions = { name: string; steam?: boolean; clipboard?: boolean; clear?: number; sync?: boolean };
 
-export async function getAuth({ name, steam, clipboard, sync }: GetOptions) {
+export async function getAuth({ name, steam, clipboard, clear = 30, sync }: GetOptions) {
   const objAuth = await decrypt();
-  if (!objAuth[name]) return notFound(name);
-  const entry = parseEntry(objAuth[name]);
-  const token = steam || entry.steam
-    ? steamCode(entry.secret, await syncedNow('steam', sync))
-    : totpCode(entry.secret, await syncedNow('totp', sync));
-  if (clipboard) await copyToClipboard(token);
-  console.info(token);
+  const found = findName(Object.keys(objAuth), name);
+  if ('error' in found) {
+    console.error(found.error);
+    process.exitCode = 1;
+    return;
+  }
+  const entry = parseEntry(objAuth[found.name]);
+  const isSteam = !!(steam || entry.steam);
+  const period = codePeriod(entry.secret, isSteam);
+  let timestamp = await syncedNow(isSteam ? 'steam' : 'totp', sync);
+
+  // a code about to expire is of little use: wait for the next one
+  const msLeft = () => period * 1000 - (timestamp % (period * 1000));
+  if (msLeft() <= 2000) {
+    const wait = msLeft();
+    if (process.stderr.isTTY) console.error('Code about to expire, waiting for the next one...');
+    await sleep(wait);
+    timestamp += wait;
+  }
+
+  const token = isSteam ? steamCode(entry.secret, timestamp) : totpCode(entry.secret, timestamp);
+  if (clipboard) {
+    await copyToClipboard(token);
+    if (clear > 0) clearClipboardLater(token, clear);
+  }
+  // scripts get only the code; people also see how long it stays valid
+  console.info(process.stdout.isTTY ? `${token}  (${Math.ceil(msLeft() / 1000)}s left)` : token);
 }
 
 type AddOptions = { name: string; secretKey?: string; steam?: boolean; mafile?: string; replace?: boolean };
@@ -95,4 +138,51 @@ export async function listAuth({ showsecret }: { showsecret?: boolean }) {
   if (!showsecret) return console.table(Object.keys(objAuth));
   console.warn('Warning: secret keys are shown in plain text.');
   console.table(Object.fromEntries(Object.entries(objAuth).map(([name, entry]) => [name, parseEntry(entry)])));
+}
+
+export async function renameAuth({ oldName, newName }: { oldName: string; newName: string }) {
+  const objAuth = await decrypt();
+  if (!objAuth[oldName]) return notFound(oldName);
+  if (objAuth[newName]) {
+    console.error(`${newName} already exists.`);
+    process.exitCode = 1;
+    return;
+  }
+  objAuth[newName] = objAuth[oldName];
+  delete objAuth[oldName];
+  await encrypt(objAuth);
+  console.info(`${oldName} renamed to ${newName}.`);
+}
+
+export async function exportAuth({ file, force }: { file: string; force?: boolean }) {
+  const objAuth = await decrypt();
+  const password = await readSecret('Backup password: ');
+  if (password.length < 8) throw new Error('Use a password of at least 8 characters.');
+  if (process.stdin.isTTY && (await readSecret('Repeat password: ')) !== password)
+    throw new Error('Passwords do not match.');
+  try {
+    await writeFile(file, encryptBackup(objAuth, password), { flag: force ? 'w' : 'wx' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new Error(`${file} already exists, add --force to overwrite it.`, { cause: error });
+    throw error;
+  }
+  console.info(`${Object.keys(objAuth).length} authenticator(s) exported to ${file}.`);
+}
+
+export async function importAuth({ file, replace }: { file: string; replace?: boolean }) {
+  const text = await readFile(file, 'utf8');
+  const backup = decryptBackup(text, await readSecret('Backup password: '));
+  const objAuth = await decrypt();
+  const added: string[] = [];
+  const skipped: string[] = [];
+  for (const [name, entry] of Object.entries(backup)) {
+    if (objAuth[name] && !replace) skipped.push(name);
+    else {
+      objAuth[name] = entry;
+      added.push(name);
+    }
+  }
+  if (added.length) await encrypt(objAuth);
+  console.info(`${added.length} authenticator(s) imported.`);
+  if (skipped.length) console.warn(`Skipped (already exist, add --replace to overwrite): ${skipped.join(', ')}`);
 }
