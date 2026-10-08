@@ -75,7 +75,6 @@ win-cliauth is provided without warranty; see the [license](LICENSE).
 
 This project uses the following open-source libraries:
 
-- [otpauth](https://github.com/hectorm/otpauth) - One Time Password (HOTP/TOTP) library for Node.js, Deno, Bun and browsers.
 - [yargs](https://github.com/yargs/yargs) - A command-line argument parsing library for Node.js.
 
 Please refer to the respective library documentation for detailed information on their usage, licensing, and contributions.

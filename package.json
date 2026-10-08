@@ -49,7 +49,6 @@
     "steam"
   ],
   "dependencies": {
-    "otpauth": "^9.1.4",
     "yargs": "^17.5.1"
   },
   "engines": {
