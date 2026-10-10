@@ -49,7 +49,7 @@
     "steam"
   ],
   "dependencies": {
-    "yargs": "^17.5.1"
+    "yargs": "^18.2.0"
   },
   "engines": {
     "node": ">=20"
