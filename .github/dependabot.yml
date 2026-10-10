@@ -14,6 +14,13 @@ updates:
       # one PR for all development tools (eslint, typescript, commitlint, ...)
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # typescript-eslint supports TypeScript only up to a given version; take majors by hand
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Node types must match the oldest Node version in package.json engines
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
