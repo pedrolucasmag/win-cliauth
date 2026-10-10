@@ -8,7 +8,8 @@ LICENSE file in the root directory of this source tree.
 
 import { spawn } from 'child_process';
 
-export type Entry = string | { secret: string; steam?: boolean };
+// a plain string is a TOTP secret; counter is set for HOTP (counter-based) entries
+export type Entry = string | { secret: string; steam?: boolean; counter?: number };
 export type Vault = Record<string, Entry>;
 
 // Windows PowerShell must not inherit PowerShell 7's module path (set when win-cliauth runs from pwsh),
