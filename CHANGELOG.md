@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://www.conventionalcommits.org) for commit guidelines.
 
+## [1.1.1](https://github.com/pedrolucasmag/win-cliauth/compare/v1.1.0...v1.1.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **deps:** bump yargs from 17.7.3 to 18.2.0 ([3d264bd](https://github.com/pedrolucasmag/win-cliauth/commit/3d264bd7d51a9eec0e0f88fb6f91e75cf059a38e))
+* **deps:** bump yargs from 17.7.3 to 18.2.0 ([781bc01](https://github.com/pedrolucasmag/win-cliauth/commit/781bc014e899febdfef3c2ef69b399c28edae71b))
+* require Node 20.19+ or 22.12+, as yargs 18 does ([fa7c196](https://github.com/pedrolucasmag/win-cliauth/commit/fa7c196246840e3826ac0c37ad5c791cea082139))
+* require Node 20.19+ or 22.12+, as yargs 18 does ([e2da400](https://github.com/pedrolucasmag/win-cliauth/commit/e2da400d5aec347d514fd49daee5d47e968c9c49))
+
 ## [1.1.0](https://github.com/pedrolucasmag/win-cliauth/compare/v1.0.5...v1.1.0) (2026-10-10)
 
 
